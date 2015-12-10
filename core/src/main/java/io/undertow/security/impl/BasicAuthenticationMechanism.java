@@ -21,6 +21,7 @@ import static io.undertow.UndertowMessages.MESSAGES;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ public class BasicAuthenticationMechanism implements AuthenticationMechanism {
 
     private final IdentityManager identityManager;
 
+    private final BasicAuthenticationEncodingDetector basicAuthenticationEncodingDetector = new BasicAuthenticationEncodingDetector(StandardCharsets.UTF_8);
+
     public BasicAuthenticationMechanism(final String realmName) {
         this(realmName, "BASIC");
     }
@@ -103,7 +106,8 @@ public class BasicAuthenticationMechanism implements AuthenticationMechanism {
                     String plainChallenge = null;
                     try {
                         ByteBuffer decode = FlexBase64.decode(base64Challenge);
-                        plainChallenge = new String(decode.array(), decode.arrayOffset(), decode.limit(), StandardCharsets.UTF_8);
+                        final Charset basicAuthEncoding = basicAuthenticationEncodingDetector.detectBasicAuthEncoding(exchange.getRequestHeaders());
+                        plainChallenge = new String(decode.array(), decode.arrayOffset(), decode.limit(), basicAuthEncoding);
                     } catch (IOException e) {
                     }
                     int colonPos;
